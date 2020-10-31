@@ -4,7 +4,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#define PLAYER_SPEED	  150
+#define WIDTH             800
+#define HEIGHT            600
 #define MAX_BALLS          20
 
 typedef struct Sprite {
@@ -19,7 +20,8 @@ typedef struct Entity {
 	Vector2 position;
 	Sprite sprite;
 	float speed;
-	int permanent;	// bool type to indicate if sprite should be permanent or disappear after anim cycle
+	int permanent;	// bool to indicate if sprite should be permanent or disappear after anim cycle
+	char type;		// char type to indicate which type of Entity it is, and especially which type of ball
 } Entity;
 
 void ClearEverything(Entity player, Entity enemy, Entity balls[]);
@@ -28,9 +30,9 @@ Entity CreateEnemy(void);
 void UpdatePlayer(Entity *entity, float delta);
 void UpdateEnemy(Entity *enemy, Entity *player, float delta);
 void UpdateSpriteFrame(Sprite *sprite);
-Entity CreateBall(int permanent, Vector2 pos);
-void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound sound);
-int UpdateBallSprite(Sprite *sprite, int permanent);
+Entity CreateBall(int permanent, char type, Vector2 pos);
+void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound soundA, Sound soundB, Sound soundC);
+bool UpdateBallSprite(Sprite *sprite, int permanent);
 Vector2 FindFollowPath(Vector2 posA, Vector2 posB);
 int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca);
 
@@ -38,8 +40,8 @@ int main(void)
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 600;
+    const int screenWidth = WIDTH;
+    const int screenHeight = HEIGHT;
 
 	srand(time(0));
     
@@ -48,6 +50,7 @@ int main(void)
 	InitAudioDevice();
 	Music music = LoadMusicStream("resources/tower.wav"); 
 	Sound pop = LoadSound("resources/bubblePop.wav");
+	Sound pft = LoadSound("resources/bubblePft.wav");
 	Sound waca = LoadSound("resources/waca.wav");
 	PlayMusicStream(music);
 
@@ -67,7 +70,7 @@ int main(void)
 	Entity balls[MAX_BALLS] = {};
 	for (int i = 0; i < MAX_BALLS; i++)
 	{
-		balls[i] = CreateBall(0, (Vector2){ -1.0, -1.0});
+		balls[i] = CreateBall(0, 'n', (Vector2){ -1.0, -1.0});
 	}
 
     SetTargetFPS(60);
@@ -106,7 +109,7 @@ int main(void)
 				
 				for (int i = 0; i < MAX_BALLS; i++)
 				{
-					balls[i] = CreateBall(0, (Vector2){ -1.0, -1.0});
+					balls[i] = CreateBall(0, 'n', (Vector2){ -1.0, -1.0});
 				}
 
 				SetTargetFPS(60);
@@ -133,7 +136,7 @@ int main(void)
 			float deltaTime = GetFrameTime();
 			UpdatePlayer(&player, deltaTime);
 			UpdateEnemy(&enemy, &player, deltaTime);
-			UpdateBalls(balls, MAX_BALLS, &player, &score, pop);
+			UpdateBalls(balls, MAX_BALLS, &player, &score, pop, pft, waca);
 
 			sprintf(scoreString, "%i", score);
 			// Draw
@@ -164,6 +167,7 @@ int main(void)
 	ClearEverything(player, enemy, balls);
 	StopSoundMulti();
 	UnloadSound(pop);
+	UnloadSound(pft);
 	UnloadSound(waca);
 	UnloadMusicStream(music);
 	CloseAudioDevice();
@@ -204,6 +208,19 @@ void UpdatePlayer(Entity *entity, float delta)
 		entity->sprite.currentFrame = 0;
 		entity->sprite.frameRec.y = (float)entity->sprite.currentFrame*(float)entity->sprite.texture.height/8;
 	}
+
+	if (entity->speed < 250.0f)
+		entity->speed++;
+
+	if (entity->position.x < -20)
+		entity->position.x = 800;
+	else if (entity->position.x > 800)
+		entity->position.x = -20;
+
+	if (entity->position.y < -20)
+		entity->position.y = 600;
+	else if (entity->position.y > 600)
+		entity->position.y = -20;
 }
 
 void UpdateEnemy(Entity *enemy, Entity *player, float delta)
@@ -221,31 +238,57 @@ void UpdateEnemy(Entity *enemy, Entity *player, float delta)
 		enemy->sprite.currentFrame = 0;
 		enemy->sprite.frameRec.y = (float)enemy->sprite.currentFrame*(float)enemy->sprite.texture.height/8;
 	}
+
+	if (enemy->position.x < -20)
+		enemy->position.x = 800;
+	else if (enemy->position.x > 800)
+		enemy->position.x = -20;
+
+	if (enemy->position.y < -20)
+		enemy->position.y = 600;
+	else if (enemy->position.y > 600)
+		enemy->position.y = -20;
 }
 
-void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound sound)
+void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound soundA, Sound soundB, Sound soundC)
 {
 	for (int i = 0; i < n; i++)
 	{
 		if (CheckCollisionCircles(balls[i].position, 10, player->position, 10) && balls[i].permanent)
 		{
-			(*score)++;
-			PlaySoundMulti(sound);
 			UnloadTexture(balls[i].sprite.texture);
 			int permanent = balls[i].permanent;
 			Vector2 pos = (Vector2){ balls[i].position.x, balls[i].position.y };
-			balls[i] = CreateBall(permanent, pos);
+			char type = balls[i].type;
+			balls[i] = CreateBall(permanent, type, pos);
+			if (type == 'b')
+			{
+				(*score)++;
+				PlaySoundMulti(soundA);
+			}
+			else if (type == 'g')
+			{
+				player->speed = 150;
+				PlaySoundMulti(soundB);
+			}
+			else
+			{
+				PlaySoundMulti(soundC);
+				(*score) -= 5;
+			}
+				
 		}
 		else
 		{
-			int cleanUp;
-			cleanUp = UpdateBallSprite(&(balls[i].sprite), balls[i].permanent);
-			if (cleanUp)
+			bool ballFinishedPopping;
+			ballFinishedPopping = UpdateBallSprite(&(balls[i].sprite), balls[i].permanent);
+			if (ballFinishedPopping)
 			{
 				UnloadTexture(balls[i].sprite.texture);
 				int permanent = balls[i].permanent;
 				Vector2 pos = (Vector2){ -1.0f, -1.0f };
-				balls[i] = CreateBall(permanent, pos);
+				char type = 'n';
+				balls[i] = CreateBall(permanent, type, pos);
 			}
 		}
 	}
@@ -253,7 +296,7 @@ void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound sound)
 
 // Returns bool flag that indicates whether the animation of a temporal sprite (i.e. an explosion) has finished and needs to be 
 // unloaded
-int UpdateBallSprite(Sprite *sprite, int permanent)
+bool UpdateBallSprite(Sprite *sprite, int permanent)
 {
 		sprite->framesCounter++;
 
@@ -270,13 +313,13 @@ int UpdateBallSprite(Sprite *sprite, int permanent)
 				}
 				else
 				{
-					return 1;
+					return true;
 				}
 			}
 			sprite->frameRec.x = (float)sprite->currentFrame*(float)sprite->texture.width/4;
-			return 0;
+			return false;
 		}
-		return 0;
+		return false;
 }
 
 
@@ -297,8 +340,27 @@ void UpdateSpriteFrame(Sprite *sprite)
 
 Vector2 FindFollowPath(Vector2 posA, Vector2 posB)
 {
-	Vector2 d = (Vector2){ posA.x - posB.x, posA.y - posB.y };
-	float D = Vector2Distance(posA, posB);
+	Vector2 possiblePositions[5] = {};
+	float distances[5] = {};
+	possiblePositions[0] = posA;
+	possiblePositions[1] = (Vector2){ posA.x, posA.y - HEIGHT };
+	possiblePositions[2] = (Vector2){ posA.x, posA.y + HEIGHT };
+	possiblePositions[3] = (Vector2){ posA.x - WIDTH, posA.y };
+	possiblePositions[4] = (Vector2){ posA.x + WIDTH, posA.y };
+
+	for (int i = 0; i < 5; i++)
+	{
+		distances[i] = Vector2Distance(possiblePositions[i], posB);
+	}
+	int closestPosition = 0;
+	for (int i = 1; i < 5; i++)
+	{
+		if (distances[i] < distances[closestPosition])
+			closestPosition = i;
+	}
+
+	Vector2 d = (Vector2){ possiblePositions[closestPosition].x - posB.x, possiblePositions[closestPosition].y - posB.y };
+	float D = distances[closestPosition];
 	Vector2 n = (Vector2){ d.x / D, d.y / D };
 	return n;
 }
@@ -327,6 +389,7 @@ Entity CreatePlayer(void)
 	player.sprite.framesSpeed = 8;
 	player.speed = 250.0f;
 	player.permanent = 1;
+	player.type = 'p';
 
 	return player;
 }
@@ -354,18 +417,36 @@ Entity CreateEnemy(void)
 	enemy.sprite.framesSpeed = 8;
 	enemy.speed = 200.0f;
 	enemy.permanent = 1;
+	enemy.type = 'e';
 
 	return enemy;
 }
 
-Entity CreateBall(int permanent, Vector2 position)
+Entity CreateBall(int permanent, char type, Vector2 position)
 {
 	if (!permanent)
 	{
 		int lower = 10, upperHeight = 550, upperWidth = 750;
+		int typeRandom = (rand() % 10) + 1;
 		Entity ball = { 0 };
 		ball.position = (Vector2){(float)((rand() % (upperWidth - lower + 1)) + lower), (float)((rand() % (upperHeight - lower + 1)) + lower)};
-		ball.sprite.texture = LoadTexture("resources/blue-ball.png");	// Texture Loading
+
+		if (typeRandom < 8)
+		{
+			ball.sprite.texture = LoadTexture("resources/blue-ball.png");	// Texture Loading
+			ball.type = 'b';
+		}
+		else if (typeRandom < 10)
+		{
+			ball.sprite.texture = LoadTexture("resources/green-ball.png");	// Texture Loading
+			ball.type = 'g';
+		}
+		else
+		{
+			ball.sprite.texture = LoadTexture("resources/red-ball.png");
+			ball.type = 'r';
+		}
+
 		ball.sprite.frameRec = (Rectangle){ 0.0f, 0.0f, (float)ball.sprite.texture.width/4, (float)ball.sprite.texture.height };
 		ball.sprite.currentFrame = 0;
 		ball.sprite.framesCounter = 0;
@@ -378,7 +459,12 @@ Entity CreateBall(int permanent, Vector2 position)
 	{
 		Entity boom = { 0 };
 		boom.position = position;
-		boom.sprite.texture = LoadTexture("resources/boom.png");
+
+		if (type == 'b')
+			boom.sprite.texture = LoadTexture("resources/boom.png");
+		else if (type == 'g')
+			boom.sprite.texture = LoadTexture("resources/redBoom.png");
+
 		boom.sprite.frameRec = (Rectangle){ 0.0f, 0.0f, (float)boom.sprite.texture.width/4, (float)boom.sprite.texture.height };
 		boom.sprite.currentFrame = 0;
 		boom.sprite.framesCounter = 0;
