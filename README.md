@@ -3,7 +3,7 @@
 ### About
 
 Tofu Chase is a very small mini game made for self-learning.
-It is programmed C and using the raylib library. (raylib.com)
+It is programmed in C and uses the raylib library. (raylib.com)
 
 ### Art
 
