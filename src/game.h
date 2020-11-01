@@ -57,7 +57,7 @@ bool UpdateBallSprite(Sprite *sprite, int permanent);
 
 // GameOver Functions
 //---------------------------------------------------------------------------------------
-int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca);
+bool CheckGameOver(Entity *player, Entity *enemy, bool gameOver, Sound waca);
 void ClearEverything(Entity player, Entity enemy, Entity balls[]);
 
 #endif

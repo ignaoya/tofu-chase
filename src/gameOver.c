@@ -1,16 +1,16 @@
 #include "game.h"
 
-int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca)
+bool CheckGameOver(Entity *player, Entity *enemy, bool gameOver, Sound waca)
 {
     if (CheckCollisionCircles(enemy->position, 10, player->position, 10))
     {
         if (!gameOver)
             PlaySoundMulti(waca);
 
-        return 1;
+        return true;
     }
     else
-        return 0;
+        return false;
 }
 
 void ClearEverything(Entity player, Entity enemy, Entity balls[])

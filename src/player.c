@@ -22,14 +22,23 @@ void UpdatePlayer(Entity *entity, float delta)
     {
         UpdateSpriteFrame(&(entity->sprite));
 
+		Vector2 direction = (Vector2) { 0.0f, 0.0f };
+
         if (IsKeyDown(KEY_LEFT))
-            entity->position.x -= entity->speed * delta;
+			direction.x += 1.0;
         if (IsKeyDown(KEY_RIGHT))
-            entity->position.x += entity->speed * delta;
+			direction.x -= 1.0;
         if (IsKeyDown(KEY_DOWN))
-            entity->position.y += entity->speed * delta;
+			direction.y -= 1.0;
         if (IsKeyDown(KEY_UP))
-            entity->position.y -= entity->speed * delta;
+			direction.y += 1.0;
+
+		float distance = Vector2Distance((Vector2){ 0.0f, 0.0f }, direction);
+		// Normalized direction ( to avoid duplicating speed when moving diagonally )
+		Vector2 nDirection = (Vector2){ direction.x / distance, direction.y / distance };
+
+		entity->position.x -= nDirection.x * entity->speed * delta;
+		entity->position.y -= nDirection.y * entity->speed * delta;
     }
     else
     {

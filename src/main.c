@@ -9,7 +9,7 @@ int main(void)
 
 	srand(time(0));
     
-    InitWindow(screenWidth, screenHeight, "The Tower");
+    InitWindow(screenWidth, screenHeight, "Tofu Chase");
 
 	InitAudioDevice();
 	Music music = LoadMusicStream("resources/tower.wav"); 
@@ -38,7 +38,8 @@ int main(void)
 	}
 
     SetTargetFPS(60);
-	int gameOver = 0;
+	bool gameOver = false;
+	bool intro = true;
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -50,7 +51,20 @@ int main(void)
 		UpdateMusicStream(music);
 
 
-		if (CheckGameOver(&player, &enemy, gameOver, waca))
+
+		if (intro)
+		{
+			BeginDrawing();
+
+				ClearBackground(LIGHTGRAY);
+				DrawText("Tofu Chase", 150, 200, 80, BLACK);
+				DrawText("Press SPACE to Start", 150, 300, 40, BLACK);
+
+			EndDrawing();
+			if (IsKeyPressed(KEY_SPACE))
+				intro = false;
+		}
+		else if (CheckGameOver(&player, &enemy, gameOver, waca))
 		{
 			// Check for Restart
 			// ---------------------------------------------------------------------------------
