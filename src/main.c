@@ -33,7 +33,7 @@ void UpdateSpriteFrame(Sprite *sprite);
 Entity CreateBall(int permanent, char type, Vector2 pos);
 void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound soundA, Sound soundB, Sound soundC);
 bool UpdateBallSprite(Sprite *sprite, int permanent);
-Vector2 FindFollowPath(Vector2 posA, Vector2 posB);
+Vector2 FindPath(Vector2 posA, Vector2 posB);
 int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca);
 
 int main(void)
@@ -227,7 +227,7 @@ void UpdateEnemy(Entity *enemy, Entity *player, float delta)
 {
 	if (!CheckCollisionCircles(enemy->position, 10, player->position, 10))
 	{ 
-		Vector2 direction = FindFollowPath(enemy->position, player->position);
+		Vector2 direction = FindPath(enemy->position, player->position);
 		enemy->position.x -= direction.x * enemy->speed * delta;
 		enemy->position.y -= direction.y * enemy->speed * delta;
 
@@ -338,7 +338,7 @@ void UpdateSpriteFrame(Sprite *sprite)
 		}
 }
 
-Vector2 FindFollowPath(Vector2 posA, Vector2 posB)
+Vector2 FindPath(Vector2 posA, Vector2 posB)
 {
 	Vector2 possiblePositions[5] = {};
 	float distances[5] = {};
