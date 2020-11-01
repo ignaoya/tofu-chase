@@ -1,12 +1,4 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "time.h"
-#include "raylib.h"
-#include "raymath.h"
-
-#define WIDTH             800
-#define HEIGHT            600
-#define MAX_BALLS          20
+#include "game.h"
 
 typedef struct Sprite {
 	Texture2D texture;
