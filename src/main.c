@@ -1,33 +1,5 @@
 #include "game.h"
 
-typedef struct Sprite {
-	Texture2D texture;
-	Rectangle frameRec;
-	int currentFrame;
-	int framesCounter;
-	int framesSpeed;
-} Sprite;
-
-typedef struct Entity {
-	Vector2 position;
-	Sprite sprite;
-	float speed;
-	int permanent;	// bool to indicate if sprite should be permanent or disappear after anim cycle
-	char type;		// char type to indicate which type of Entity it is, and especially which type of ball
-} Entity;
-
-void ClearEverything(Entity player, Entity enemy, Entity balls[]);
-Entity CreatePlayer(void);
-Entity CreateEnemy(void);
-void UpdatePlayer(Entity *entity, float delta);
-void UpdateEnemy(Entity *enemy, Entity *player, float delta);
-void UpdateSpriteFrame(Sprite *sprite);
-Entity CreateBall(int permanent, char type, Vector2 pos);
-void UpdateBalls(Entity balls[], int n, Entity *player, int *score, Sound soundA, Sound soundB, Sound soundC);
-bool UpdateBallSprite(Sprite *sprite, int permanent);
-Vector2 FindPath(Vector2 posA, Vector2 posB);
-int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca);
-
 int main(void)
 {
     // Initialization
@@ -59,7 +31,7 @@ int main(void)
 	// Balls creation
 	// -------------------------------------------------------------------------------------
 	
-	Entity balls[MAX_BALLS] = {};
+	Entity balls[MAX_BALLS] = { 0 };
 	for (int i = 0; i < MAX_BALLS; i++)
 	{
 		balls[i] = CreateBall(0, 'n', (Vector2){ -1.0, -1.0});
@@ -180,41 +152,6 @@ void ClearEverything(Entity player, Entity enemy, Entity balls[])
 	}
 }
 
-void UpdatePlayer(Entity *entity, float delta)
-{
-	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_UP)) 
-	{
-		UpdateSpriteFrame(&(entity->sprite));
-
-		if (IsKeyDown(KEY_LEFT))
-			entity->position.x -= entity->speed * delta;
-		if (IsKeyDown(KEY_RIGHT))
-			entity->position.x += entity->speed * delta;
-		if (IsKeyDown(KEY_DOWN))
-			entity->position.y += entity->speed * delta;
-		if (IsKeyDown(KEY_UP))
-			entity->position.y -= entity->speed * delta;
-	}
-	else
-	{
-		entity->sprite.currentFrame = 0;
-		entity->sprite.frameRec.y = (float)entity->sprite.currentFrame*(float)entity->sprite.texture.height/8;
-	}
-
-	if (entity->speed < 250.0f)
-		entity->speed++;
-
-	if (entity->position.x < -20)
-		entity->position.x = 800;
-	else if (entity->position.x > 800)
-		entity->position.x = -20;
-
-	if (entity->position.y < -20)
-		entity->position.y = 600;
-	else if (entity->position.y > 600)
-		entity->position.y = -20;
-}
-
 void UpdateEnemy(Entity *enemy, Entity *player, float delta)
 {
 	if (!CheckCollisionCircles(enemy->position, 10, player->position, 10))
@@ -332,8 +269,8 @@ void UpdateSpriteFrame(Sprite *sprite)
 
 Vector2 FindPath(Vector2 posA, Vector2 posB)
 {
-	Vector2 possiblePositions[5] = {};
-	float distances[5] = {};
+	Vector2 possiblePositions[5] = { 0 };
+	float distances[5] = { 0 };
 	possiblePositions[0] = posA;
 	possiblePositions[1] = (Vector2){ posA.x, posA.y - HEIGHT };
 	possiblePositions[2] = (Vector2){ posA.x, posA.y + HEIGHT };
@@ -368,22 +305,6 @@ int CheckGameOver(Entity *player, Entity *enemy, int gameOver, Sound waca)
 	}
 	else
 		return 0;
-}
-
-Entity CreatePlayer(void)
-{
-	Entity player = { 0 };
-	player.position = (Vector2){350.0f, 280.0f};
-	player.sprite.texture = LoadTexture("resources/tofu.png");	// Texture Loading
-	player.sprite.frameRec = (Rectangle){ 0.0f, 0.0f, (float)player.sprite.texture.width, (float)player.sprite.texture.height/8 };
-	player.sprite.currentFrame = 1;
-	player.sprite.framesCounter = 0;
-	player.sprite.framesSpeed = 8;
-	player.speed = 250.0f;
-	player.permanent = 1;
-	player.type = 'p';
-
-	return player;
 }
 
 Entity CreateEnemy(void)
