@@ -58,7 +58,9 @@ int main(void)
 
 				ClearBackground(LIGHTGRAY);
 				DrawText("Tofu Chase", 150, 200, 80, BLACK);
-				DrawText("Press SPACE to Start", 150, 300, 40, BLACK);
+				DrawText("a game by Ignacio Oyarzabal", 250, 280, 20, BLACK);
+				DrawText("with art from 'Tofuman' by Emcee Flesher", 190, 300, 20, BLACK);
+				DrawText("Press SPACE to Start", 150, 500, 40, BLACK);
 
 			EndDrawing();
 			if (IsKeyPressed(KEY_SPACE))
